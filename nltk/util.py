@@ -261,11 +261,10 @@ def guess_encoding(data):
         else:
             break
     if not successful_encoding:
-         raise UnicodeError(
-        'Unable to decode input data.  Tried the following encodings: %s.'
-        % ', '.join([repr(enc) for enc in encodings if enc]))
+        raise UnicodeError('Unable to decode input data. '
+        'Tried the following encodings: %s.' % ', '.join([repr(enc) for enc in encodings if enc]))
     else:
-         return (decoded, successful_encoding)
+        return (decoded, successful_encoding)
 
 
 ##########################################################################
@@ -465,7 +464,13 @@ def ngrams(sequence, n, pad_left=False, pad_right=False,
 
     history = []
     while n > 1:
-        history.append(next(sequence))
+        # PEP 479, prevent RuntimeError from being raised when StopIteration bubbles out of generator
+        try:
+            next_item = next(sequence)
+        except StopIteration:
+            # no more data, terminate the generator
+            return
+        history.append(next_item)
         n -= 1
     for item in sequence:
         history.append(item)
@@ -612,7 +617,7 @@ def binary_search_file(file, key, cache={}, cacheDepth=-1):
             while True:
                 file.seek(max(0, middle - 1))
                 if middle > 0:
-                    file.readline()
+                    file.discard_line()
                 offset = file.tell()
                 line = file.readline()
                 if line != "": break
